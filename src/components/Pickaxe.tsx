@@ -49,43 +49,54 @@ export function Pickaxe({ onHit }: PickaxeProps) {
       setTimeout(() => setIsSwinging(false), 300) // Animation duration
     }
 
-    // Get camera direction for pickaxe positioning
+    // Get camera direction and rotation for pickaxe positioning
     const cameraDirection = new THREE.Vector3()
     camera.getWorldDirection(cameraDirection)
 
+    // Position the pickaxe relative to camera (like first-person view)
+    const rightOffset = 0.5   // Right side of screen
+    const downOffset = -0.6   // Lower on screen
+    const forwardOffset = 1.2 // In front of camera
+
+    // Create position relative to camera's local space
     const rightVector = new THREE.Vector3()
-    rightVector.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0))
+    rightVector.crossVectors(cameraDirection, camera.up).normalize()
 
-    // Base position relative to camera (right side)
-    const basePos = rightVector.clone().multiplyScalar(0.3)
+    // Calculate final position in world space
+    const basePos = camera.position.clone()
+    basePos.add(rightVector.clone().multiplyScalar(rightOffset))
+    basePos.add(camera.up.clone().multiplyScalar(downOffset))
+    basePos.add(cameraDirection.clone().multiplyScalar(forwardOffset))
 
-    // Add forward offset
-    const forwardOffset = cameraDirection.clone().multiplyScalar(0.8)
-    basePos.add(forwardOffset)
+    // Add subtle idle bobbing motion
+    if (!isSwinging) {
+      const bobbing = Math.sin(state.clock.elapsedTime * 1.5) * 0.02
+      basePos.y += bobbing
+    }
 
-    // Add downward offset
-    basePos.y -= 0.4
+    pickaxeRef.current.position.copy(basePos)
 
-    // Base position (bottom-right of screen)
-    pickaxeRef.current.position.copy(camera.position).add(basePos)
+    // Reset rotation matrix to avoid accumulation
+    pickaxeRef.current.rotation.set(0, 0, 0)
+
+    // Make pickaxe point in camera direction
+    pickaxeRef.current.lookAt(
+      basePos.clone().add(cameraDirection.clone().multiplyScalar(2))
+    )
+
+    // Adjust rotation to make it look natural in hand
+    pickaxeRef.current.rotateZ(-Math.PI / 6)  // 30 degrees rotation from Y to X axis (rotate around Z)
+    pickaxeRef.current.rotateY(-Math.PI / 6)  // +90 degrees rotation from Z to X axis (rotate around Y)
+    pickaxeRef.current.rotateX(-Math.PI / 4)  // Tilt forward slightly
+    pickaxeRef.current.rotateX(Math.PI / 2)   // 90 degrees rotation from Y to Z axis (rotate around X)
 
     if (isSwinging) {
-      // Movimento giratório no eixo Z - cabeça vai de Y para Z
+      // Add swing animation on top of base rotation
       const swingTime = (Date.now() % 300) / 300 // 0 to 1 over 300ms
-      const rotationAngle = Math.sin(swingTime * Math.PI) * Math.PI / 2 // 90 degrees rotation
+      const swingAngle = Math.sin(swingTime * Math.PI) * Math.PI / 2 // 90 degrees swing
 
-      // Rotação no eixo Z - cabeça move de (0, ymax, 0) para (0, 0, zmax)
-      pickaxeRef.current.rotation.x = 0
-      pickaxeRef.current.rotation.y = 0
-      pickaxeRef.current.rotation.z = -rotationAngle // Negativo para rotação correta
-    } else {
-      // Posição idle com bobbing sutil
-      pickaxeRef.current.position.add(new THREE.Vector3(0, Math.sin(state.clock.elapsedTime * 1.5) * 0.02, 0))
-
-      // Orientação inicial - picareta vertical com cabeça em Y
-      pickaxeRef.current.rotation.x = 0
-      pickaxeRef.current.rotation.y = 0
-      pickaxeRef.current.rotation.z = 0
+      // Apply swing rotation
+      pickaxeRef.current.rotateX(-swingAngle)
     }
   })
 
@@ -122,84 +133,36 @@ export function Pickaxe({ onHit }: PickaxeProps) {
           <meshLambertMaterial color="#654321" />
         </mesh>
 
-        {/* Axis Indicators - Positioned below pickaxe */}
-        {/* X Axis - Red Arrow (Forward direction from camera) */}
+        {/* Simple axis reference */}
         <group position={[0, -0.4, 0]}>
-          {/* X Axis Line */}
+          {/* X Axis - Red */}
           <mesh position={[0.1, 0, 0]}>
-            <boxGeometry args={[0.2, 0.01, 0.01]} />
+            <boxGeometry args={[0.2, 0.005, 0.005]} />
             <meshBasicMaterial color="red" />
           </mesh>
-          {/* X Arrow Head */}
-          <mesh position={[0.2, 0, 0]}>
-            <boxGeometry args={[0.02, 0.03, 0.01]} />
-            <meshBasicMaterial color="red" />
-          </mesh>
-          {/* X Label */}
-          <Text
-            position={[0.3, 0, 0]}
-            fontSize={0.06}
-            color="red"
-            anchorX="center"
-            anchorY="middle"
-          >
-            X+↗
-          </Text>
-        </group>
+          <Text position={[0.25, 0, 0]} fontSize={0.03} color="red">X</Text>
 
-        {/* Y Axis - Green Arrow (Up direction) */}
-        <group position={[0, -0.4, 0]}>
-          {/* Y Axis Line */}
+          {/* Y Axis - Green */}
           <mesh position={[0, 0.1, 0]}>
-            <boxGeometry args={[0.01, 0.2, 0.01]} />
+            <boxGeometry args={[0.005, 0.2, 0.005]} />
             <meshBasicMaterial color="green" />
           </mesh>
-          {/* Y Arrow Head */}
-          <mesh position={[0, 0.2, 0]}>
-            <boxGeometry args={[0.03, 0.02, 0.01]} />
-            <meshBasicMaterial color="green" />
-          </mesh>
-          {/* Y Label */}
-          <Text
-            position={[0, 0.25, 0]}
-            fontSize={0.06}
-            color="green"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Y+↑
-          </Text>
-        </group>
+          <Text position={[0, 0.25, 0]} fontSize={0.03} color="green">Y</Text>
 
-        {/* Z Axis - Blue Arrow (Right/Left from camera perspective) */}
-        <group position={[0, -0.4, 0]}>
-          {/* Z Axis Line */}
+          {/* Z Axis - Blue */}
           <mesh position={[0, 0, 0.1]}>
-            <boxGeometry args={[0.01, 0.01, 0.2]} />
+            <boxGeometry args={[0.005, 0.005, 0.2]} />
             <meshBasicMaterial color="blue" />
           </mesh>
-          {/* Z Arrow Head */}
-          <mesh position={[0, 0, 0.2]}>
-            <boxGeometry args={[0.03, 0.01, 0.02]} />
-            <meshBasicMaterial color="blue" />
+          <Text position={[0, 0, 0.25]} fontSize={0.03} color="blue">Z</Text>
+
+          {/* Origin Point */}
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[0.01, 0.01, 0.01]} />
+            <meshBasicMaterial color="white" />
           </mesh>
-          {/* Z Label */}
-          <Text
-            position={[0, 0, 0.25]}
-            fontSize={0.06}
-            color="blue"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Z+→
-          </Text>
         </group>
 
-        {/* Origin Point */}
-        <mesh position={[0, -0.4, 0]}>
-          <boxGeometry args={[0.02, 0.02, 0.02]} />
-          <meshBasicMaterial color="white" />
-        </mesh>
       </group>
     </>
   )

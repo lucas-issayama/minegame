@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { useBox } from '@react-three/cannon'
-import * as THREE from 'three'
 
 function Block({ position, color }: { position: [number, number, number], color: string }) {
   const [ref] = useBox(() => ({

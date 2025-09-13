@@ -27,7 +27,7 @@ export function Player() {
     api.position.subscribe((p) => (position.current = p))
   }, [api])
 
-  useFrame((state, delta) => {
+  useFrame(() => {
     const { forward, backward, leftward, rightward, jump, run } = getKeys()
     
     const speed = run ? 12 : 8

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -17,13 +17,16 @@ export function BlockFragment({
   velocity,
   angularVelocity,
   onLanded,
-  id
+  id: _id
 }: BlockFragmentProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const positionRef = useRef(new THREE.Vector3(...position))
   const velocityRef = useRef(velocity.clone())
   const angularVelRef = useRef(angularVelocity.clone())
   const hasLanded = useRef(false)
+
+  // Suppress unused variable warning
+  void _id
 
   useFrame((state, delta) => {
     if (!meshRef.current || hasLanded.current) return

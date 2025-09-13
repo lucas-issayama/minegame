@@ -4,6 +4,16 @@ import { useKeyboardControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { BlockFragment } from './BlockFragment'
 
+// Generate truly unique IDs using timestamp, random numbers, and sequence counter
+let sequenceCounter = 0
+const instanceId = Math.random().toString(36).substring(2, 11) // Unique per component instance
+const generateUniqueId = () => {
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 11)
+  const sequence = (++sequenceCounter).toString(36)
+  return `fragment-${instanceId}-${timestamp}-${random}-${sequence}`
+}
+
 interface Block {
   id: string
   position: [number, number, number]
@@ -33,7 +43,6 @@ interface DestructibleWorldProps {
 export function DestructibleWorld({ onBlockDestroyed }: DestructibleWorldProps) {
   const { camera, raycaster } = useThree()
   const [, getKeys] = useKeyboardControls()
-  const fragmentCounter = useRef(0)
   const [blocks, setBlocks] = useState<Block[]>(() => {
     const initialBlocks: Block[] = []
     const size = 20
@@ -120,7 +129,7 @@ export function DestructibleWorld({ onBlockDestroyed }: DestructibleWorldProps) 
 
         // Find the block that was hit
         const hitBlockId = Array.from(meshRefs.current.entries())
-          .find(([_, mesh]) => mesh === hitMesh)?.[0]
+          .find(([, mesh]) => mesh === hitMesh)?.[0]
 
         if (hitBlockId) {
           const hitBlock = blocks.find(block => block.id === hitBlockId)
@@ -171,8 +180,8 @@ export function DestructibleWorld({ onBlockDestroyed }: DestructibleWorldProps) 
         (Math.random() - 0.5) * 10
       )
 
-      // Generate guaranteed unique ID using incrementing counter
-      const uniqueId = `fragment-${++fragmentCounter.current}`
+      // Generate guaranteed unique ID using timestamp and random string
+      const uniqueId = generateUniqueId()
 
       newFragments.push({
         id: uniqueId,
@@ -184,16 +193,21 @@ export function DestructibleWorld({ onBlockDestroyed }: DestructibleWorldProps) 
       })
     }
 
-    setFragments(prev => [...prev, ...newFragments])
+    setFragments(prev => {
+      // Ensure no duplicate IDs exist
+      const existingIds = new Set(prev.map(f => f.id))
+      const validFragments = newFragments.filter(f => !existingIds.has(f.id))
+      return [...prev, ...validFragments]
+    })
   }
 
   const handleFragmentLanded = (fragmentId: string, finalPosition: [number, number, number]) => {
     setFragments(prev => {
       const fragment = prev.find(f => f.id === fragmentId)
       if (fragment) {
-        // Move to ground fragments
+        // Move to ground fragments with a new unique ID
         setGroundFragments(prevGround => [...prevGround, {
-          id: fragmentId,
+          id: generateUniqueId(), // Generate new ID to avoid conflicts
           position: finalPosition,
           color: fragment.color
         }])

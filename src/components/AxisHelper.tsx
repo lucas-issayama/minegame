@@ -1,5 +1,4 @@
-import { useRef } from 'react'
-import * as THREE from 'three'
+import React from 'react'
 
 // Componente para visualizar os eixos X, Y, Z
 export function AxisHelper() {
