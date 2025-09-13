@@ -33,6 +33,7 @@ interface DestructibleWorldProps {
 export function DestructibleWorld({ onBlockDestroyed }: DestructibleWorldProps) {
   const { camera, raycaster } = useThree()
   const [, getKeys] = useKeyboardControls()
+  const fragmentCounter = useRef(0)
   const [blocks, setBlocks] = useState<Block[]>(() => {
     const initialBlocks: Block[] = []
     const size = 20
@@ -143,8 +144,6 @@ export function DestructibleWorld({ onBlockDestroyed }: DestructibleWorldProps) 
 
     // Create 8-12 random fragments
     const numFragments = 8 + Math.floor(Math.random() * 5)
-    const timestamp = Date.now()
-    const randomSeed = Math.random().toString(36).substring(2, 15)
 
     for (let i = 0; i < numFragments; i++) {
       // Random position within the block
@@ -172,8 +171,8 @@ export function DestructibleWorld({ onBlockDestroyed }: DestructibleWorldProps) 
         (Math.random() - 0.5) * 10
       )
 
-      // Generate truly unique ID with timestamp, random seed, and index
-      const uniqueId = `fragment-${timestamp}-${randomSeed}-${i}`
+      // Generate guaranteed unique ID using incrementing counter
+      const uniqueId = `fragment-${++fragmentCounter.current}`
 
       newFragments.push({
         id: uniqueId,

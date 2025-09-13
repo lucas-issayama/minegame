@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useKeyboardControls, Text } from '@react-three/drei'
 import * as THREE from 'three'
@@ -12,14 +12,38 @@ export function Pickaxe({ onHit }: PickaxeProps) {
   const [, getKeys] = useKeyboardControls()
   const pickaxeRef = useRef<THREE.Group>(null)
   const [isSwinging, setIsSwinging] = useState(false)
+  const [mousePressed, setMousePressed] = useState(false)
 
-  useFrame((state, delta) => {
+  // Add mouse event listeners
+  useEffect(() => {
+    const handleMouseDown = (event: MouseEvent) => {
+      if (event.button === 0) { // Left mouse button
+        setMousePressed(true)
+      }
+    }
+
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button === 0) { // Left mouse button
+        setMousePressed(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleMouseDown)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
+
+  useFrame((state) => {
     if (!pickaxeRef.current) return
 
     const { hit } = getKeys()
 
-    // Handle hit animation
-    if (hit && !isSwinging) {
+    // Handle hit animation - triggered by either key or mouse
+    if ((hit || mousePressed) && !isSwinging) {
       setIsSwinging(true)
       onHit()
       setTimeout(() => setIsSwinging(false), 300) // Animation duration
@@ -99,7 +123,7 @@ export function Pickaxe({ onHit }: PickaxeProps) {
         </mesh>
 
         {/* Axis Indicators - Positioned below pickaxe */}
-        {/* X Axis - Red Arrow (Right direction from camera) */}
+        {/* X Axis - Red Arrow (Forward direction from camera) */}
         <group position={[0, -0.4, 0]}>
           {/* X Axis Line */}
           <mesh position={[0.1, 0, 0]}>
@@ -119,7 +143,7 @@ export function Pickaxe({ onHit }: PickaxeProps) {
             anchorX="center"
             anchorY="middle"
           >
-            X+→
+            X+↗
           </Text>
         </group>
 
@@ -147,14 +171,14 @@ export function Pickaxe({ onHit }: PickaxeProps) {
           </Text>
         </group>
 
-        {/* Z Axis - Blue Arrow (Toward camera/away from you) */}
+        {/* Z Axis - Blue Arrow (Right/Left from camera perspective) */}
         <group position={[0, -0.4, 0]}>
-          {/* Z Axis Line - pointing toward camera */}
+          {/* Z Axis Line */}
           <mesh position={[0, 0, 0.1]}>
             <boxGeometry args={[0.01, 0.01, 0.2]} />
             <meshBasicMaterial color="blue" />
           </mesh>
-          {/* Z Arrow Head - pointing toward camera */}
+          {/* Z Arrow Head */}
           <mesh position={[0, 0, 0.2]}>
             <boxGeometry args={[0.03, 0.01, 0.02]} />
             <meshBasicMaterial color="blue" />
@@ -167,7 +191,7 @@ export function Pickaxe({ onHit }: PickaxeProps) {
             anchorX="center"
             anchorY="middle"
           >
-            Z+◉
+            Z+→
           </Text>
         </group>
 

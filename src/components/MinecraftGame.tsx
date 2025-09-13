@@ -38,7 +38,7 @@ export default function MinecraftGame() {
         <div className="text-lg font-bold">Blocks Destroyed: {hitCount}</div>
       </div>
       <KeyboardControls map={keyboardMap}>
-        <Canvas camera={{ fov: 75, near: 0.1, far: 1000, position: [0, 2.5, 5] }}>
+        <Canvas camera={{ fov: 75, near: 0.1, far: 1000, position: [-5, 2.5, 0] }}>
           <ambientLight intensity={0.6} />
           <directionalLight position={[10, 10, 5]} intensity={1} />
           <SimplePlayer />

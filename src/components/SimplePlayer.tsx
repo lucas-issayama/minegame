@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -6,11 +6,10 @@ import * as THREE from 'three'
 export function SimplePlayer() {
   const { camera } = useThree()
   const [, getKeys] = useKeyboardControls()
-  const playerRef = useRef<THREE.Object3D>(null)
-  const positionRef = useRef(new THREE.Vector3(0, 2, 5))
+  const positionRef = useRef(new THREE.Vector3(-5, 2, 0))
   const velocityRef = useRef(new THREE.Vector3(0, 0, 0))
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     const { forward, backward, leftward, rightward, jump, run } = getKeys()
     
     const speed = run ? 10 : 5
@@ -26,7 +25,7 @@ export function SimplePlayer() {
     right.crossVectors(direction, new THREE.Vector3(0, 1, 0))
     
     // Calculate movement
-    let moveVector = new THREE.Vector3(0, 0, 0)
+    const moveVector = new THREE.Vector3(0, 0, 0)
     
     if (forward) {
       moveVector.add(direction.multiplyScalar(speed))
